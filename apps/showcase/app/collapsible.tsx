@@ -59,4 +59,3 @@ export function CollapsibleItem({ children, delay }: { children: string; delay: 
     </Animated.View>
   );
 }
-ß;
