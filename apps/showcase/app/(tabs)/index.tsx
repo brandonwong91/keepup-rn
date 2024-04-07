@@ -1,300 +1,365 @@
-import { Link } from 'expo-router';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
-import { CalendarDays, ChevronDown, ChevronRight, Info } from '~/components/Icons';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '~/components/ui/alert-dialog';
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { ChevronsDownUp, ChevronsUpDown } from '~/components/Icons';
 import { Button } from '~/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from '~/components/ui/context-menu';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '~/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '~/components/ui/dropdown-menu';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/components/ui/hover-card';
-import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip';
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Text } from '~/components/ui/text';
-import { Muted } from '~/components/ui/typography';
 import { cn } from '~/lib/utils';
+import { Form, FormCheckbox, FormField, FormInput } from '~/components/ui/form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
-export default function ExampleScreen() {
-  const [isTooltipOpen, setIsTooltipOpen] = React.useState(false);
+import Animated, { LinearTransition } from 'react-native-reanimated';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
+import {
+  Check,
+  GripVerticalIcon,
+  ListTodoIcon,
+  PlusIcon,
+  Trash2Icon,
+  XIcon,
+} from 'lucide-react-native';
+import { Toggle } from '~/components/ui/toggle';
+import { Separator } from '~/components/ui/separator';
+import { Checkbox } from '~/components/ui/checkbox';
+import { FlashList } from '@shopify/flash-list';
+import { useScrollToTop } from '@react-navigation/native';
+
+const formSchema = z.object({
+  title: z.string(),
+  item: z.string(),
+  checked: z.boolean(),
+});
+
+interface Item {
+  id: string;
+  value: string;
+  checked: boolean;
+}
+
+interface TitleList {
+  id: string;
+  title: string;
+  items: Item[];
+}
+
+export default function HomeScreen() {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: '',
+      item: '',
+    },
+  });
+  const [open, setOpen] = React.useState(false);
+  const [showList, setShowList] = React.useState(false);
+  const [list, setList] = React.useState<Item[]>([]);
+  const [titleList, setTitleList] = React.useState<TitleList[]>([]);
+  const [editId, setEditId] = React.useState('');
+
+  const handleEnterKeydown = (e: any) => {
+    if (e.key === 'Enter') {
+      const newItem: Item = {
+        id: Date.now().toString(),
+        value: form.getValues('item'),
+        checked: form.getValues('checked'),
+      };
+      setList([...list, newItem]);
+      form.resetField('item');
+    }
+  };
+  const handleOnBlurItem = () => {
+    if (form.getValues('item')) {
+      const newItem: Item = {
+        id: Date.now().toString(),
+        value: form.getValues('item'),
+        checked: form.getValues('checked'),
+      };
+      setList([...list, newItem]);
+      form.resetField('item');
+    }
+  };
+
+  const handleOnChange = (id: string, val: string) => {
+    const updatedList = list.map((item) => {
+      if (item.id === id) {
+        return { ...item, value: val };
+      }
+      return item;
+    });
+    setList(updatedList);
+  };
+
+  const handleOnCheck = (id: string) => {
+    const updatedList = list.map((item) => {
+      if (item.id === id) {
+        return { ...item, checked: !item.checked };
+      }
+      return item;
+    });
+    setList(updatedList);
+  };
+
+  const handleClearItem = () => {
+    form.setValue('item', '');
+  };
+
+  const removeItem = (id: string) => {
+    // Filter out the item with the given ID
+    const updatedList = list.filter((item) => item.id !== id);
+    // Update the state with the updated list
+    setList(updatedList);
+  };
+
+  const submitTitleList = () => {
+    if (editId !== '') {
+      const updatedTitleList = titleList.map((titleList) => {
+        if (titleList.id === editId) {
+          return { ...titleList, title: form.getValues('title'), items: list };
+        }
+        return titleList;
+      });
+      setTitleList(updatedTitleList);
+      setEditId('');
+    } else {
+      const newTitleList: TitleList = {
+        id: Date.now().toString(),
+        title: form.getValues('title'),
+        items: list,
+      };
+      setTitleList([...titleList, newTitleList]);
+    }
+    setList([]);
+    form.reset();
+  };
+
+  const handleQuickEnterKeyDown = (e) => {
+    if (e.key === 'Enter' && !showList && form.getValues('title')) {
+      if (editId) {
+        const updatedTitleList = titleList.map((titleList) => {
+          if (titleList.id === editId) {
+            return { ...titleList, title: form.getValues('title'), items: list };
+          }
+          return titleList;
+        });
+        setTitleList(updatedTitleList);
+        setEditId('');
+      } else {
+        const newTitleList: TitleList = {
+          id: Date.now().toString(),
+          title: form.getValues('title'),
+          items: list,
+        };
+        setTitleList([...titleList, newTitleList]);
+      }
+
+      form.reset();
+    }
+  };
+
+  const setEditTitleList = (titleList: TitleList) => {
+    form.setValue('title', titleList.title);
+    setList(titleList.items);
+    setEditId(titleList.id);
+  };
+
+  const removeTitleList = (id: string) => {
+    const updatedTitleList = titleList.filter((titleList) => titleList.id !== id);
+    setTitleList(updatedTitleList);
+  };
+
+  const ref = React.useRef(null);
+  useScrollToTop(ref);
+
+  const handleCheckTitleListItem = (checked: boolean, id: string, itemId: string) => {
+    const updatedTitleList = titleList.map((titleList) => {
+      if (titleList.id === id) {
+        const updatedItems = titleList.items.map((item) => {
+          if (item.id === itemId) {
+            return { ...item, checked };
+          }
+          return item;
+        });
+        return { ...titleList, items: updatedItems };
+      }
+      return titleList;
+    });
+    setTitleList(updatedTitleList);
+  };
+
   return (
-    <View className='flex-1 p-6 justify-center gap-6'>
-      <Card className='w-full max-w-lg mx-auto'>
-        <CardHeader>
-          <View className='flex-row gap-3'>
-            <CardTitle className='pt-1'>Team Members</CardTitle>
-            <Tooltip open={isTooltipOpen} onOpenChange={setIsTooltipOpen} delayDuration={150}>
-              <TooltipTrigger className='web:focus:outline-none'>
-                <Info size={Platform.OS == 'web' ? 14 : 16} className='text-foreground' />
-              </TooltipTrigger>
-              <TooltipContent side='bottom' insets={contentInsets} className='gap-1 py-3 px-5'>
-                <Text className='native:text-lg font-bold'>Things to try:</Text>
-                <Text className='native:text-lg text-muted-foreground'>
-                  · {Platform.OS === 'web' ? 'Hover' : 'Press'} the team member's name
-                </Text>
-                <Text className='native:text-lg text-muted-foreground'>
-                  · {Platform.OS === 'web' ? 'Right click' : 'Press and hold'} the avatar
-                </Text>
-              </TooltipContent>
-            </Tooltip>
-          </View>
-          <CardDescription>Invite your team members to collaborate.</CardDescription>
-        </CardHeader>
-        <CardContent className='gap-8'>
-          <View className='flex-row gap-3'>
-            <View className='flex-1 flex-row gap-3'>
-              <TeamMemberAvatar
-                initials='ZN'
-                name='Zach Nugent'
-                uri='https://github.com/mrzachnugent.png'
-              />
-              <View className='flex-1'>
-                <TeamMemberHoverCard name='Zach Nugent' />
-                <Text numberOfLines={1} className='text-muted-foreground'>
-                  zachnugent@example.com
-                </Text>
-              </View>
-            </View>
-            <RoleDropdownSelect defaultValue='Billing' />
-          </View>
-          <View className='flex-row gap-3'>
-            <View className='flex-1 flex-row gap-3'>
-              <TeamMemberAvatar initials='JD' name='Jane Doe' uri='invalid link' />
-              <View className='flex-1'>
-                <TeamMemberHoverCard name='Jane Doe' />
-                <Text numberOfLines={1} className='text-muted-foreground'>
-                  jane@example.com
-                </Text>
-              </View>
-            </View>
-            <RoleDropdownSelect defaultValue='Owner' />
-          </View>
-        </CardContent>
-      </Card>
-      <View className='items-center'>
-        <Link href='/form' asChild>
-          <Button variant='link' className='flex-row'>
-            <Text>Go To Form</Text>
-            <ChevronRight className='text-foreground' size={18} />
-          </Button>
-        </Link>
-      </View>
+    <View className='flex-1 p-6 justify-center gap-6 '>
+      <Form {...form}>
+        <div className='max-w-lg mx-auto'>
+          <Card className={cn('p-6', { 'border-0 shadow-none': !open })}>
+            <Collapsible asChild open={open} onOpenChange={setOpen}>
+              <Animated.View layout={Platform.OS !== 'web' ? LinearTransition : undefined}>
+                <View className='w-full gap-4'>
+                  <View className='flex flex-row items-center gap-2 justify-between'>
+                    <div className='w-full'>
+                      <FormField
+                        name='title'
+                        render={({ field }) => (
+                          <FormInput
+                            placeholder='Add note...'
+                            autoCapitalize='none'
+                            {...field}
+                            onKeyPress={handleQuickEnterKeyDown}
+                          />
+                        )}
+                      />
+                    </div>
+                    <CollapsibleTrigger asChild>
+                      <Button variant='ghost' size='icon'>
+                        {open ? (
+                          <ChevronsDownUp size={16} className='text-foreground' />
+                        ) : (
+                          <ChevronsUpDown size={16} className='text-foreground' />
+                        )}
+                        <Text className='sr-only'>Toggle</Text>
+                      </Button>
+                    </CollapsibleTrigger>
+                  </View>
+                  <CollapsibleContent className='gap-3'>
+                    {showList && (
+                      <div className='flex gap-3 items-center'>
+                        {showList && <GripVerticalIcon size={16} className='text-foreground' />}
+                        {showList && form.getValues('item') ? (
+                          <FormField
+                            control={form.control}
+                            name='checked'
+                            render={({ field }) => (
+                              <FormCheckbox {...field} className='-ml-2'></FormCheckbox>
+                            )}
+                          />
+                        ) : (
+                          <PlusIcon size={24} className='text-foreground' />
+                        )}
+                        <FormField
+                          name='item'
+                          render={({ field }) => (
+                            <FormInput
+                              placeholder='Add item...'
+                              autoCapitalize='none'
+                              {...field}
+                              onKeyPress={handleEnterKeydown}
+                              onBlur={handleOnBlurItem}
+                            />
+                          )}
+                        />
+                        {showList && (
+                          <Button variant='ghost' size='icon' onPress={handleClearItem}>
+                            <XIcon size={16} className='text-foreground' />
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
+                    {list.length > 0 &&
+                      list.map((item) => {
+                        return (
+                          <div className='flex gap-3 items-center' key={`${item.id}`}>
+                            <GripVerticalIcon size={16} className='text-foreground' />
+                            <FormCheckbox
+                              className='-ml-2'
+                              value={item.checked}
+                              onBlur={function (): void {
+                                throw new Error('Function not implemented.');
+                              }}
+                              onChange={() => handleOnCheck(item.id)}
+                              name={''}
+                            />
+
+                            <FormInput
+                              placeholder='Add description...'
+                              autoCapitalize='none'
+                              className='w-full'
+                              value={item.value}
+                              name={''}
+                              onBlur={function (): void {
+                                throw new Error('Function not implemented.');
+                              }}
+                              onChange={(val) => handleOnChange(item.id, val)}
+                            />
+                            <Button variant='ghost' size='icon' onPress={() => removeItem(item.id)}>
+                              <Trash2Icon size={16} className='text-foreground' />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    <Separator className='my-1' />
+                    <div className='flex justify-between'>
+                      <Button variant='ghost' size='icon'>
+                        <Toggle
+                          aria-label='Toggle italic'
+                          pressed={showList}
+                          onPressedChange={() => {
+                            setShowList((prev) => !prev);
+                          }}
+                        >
+                          <ListTodoIcon size={16} className='text-foreground' />
+                        </Toggle>
+                      </Button>
+                      <Button variant='ghost' size='icon' onPress={submitTitleList}>
+                        <Check size={16} className='text-foreground' />
+                      </Button>
+                    </div>
+                  </CollapsibleContent>
+                </View>
+              </Animated.View>
+            </Collapsible>
+          </Card>
+        </div>
+      </Form>
+
+      <FlashList
+        ref={ref}
+        data={titleList}
+        className='native:overflow-hidden gap-y-2 '
+        estimatedItemSize={20}
+        showsVerticalScrollIndicator={true}
+        renderItem={({ item }) => {
+          const { id, items, title } = item;
+          return (
+            <div key={id} className='py-2'>
+              <Card>
+                <CardHeader>
+                  <div className='flex justify-between'>
+                    <CardTitle className='pt-1' onPress={() => setEditTitleList(item)}>
+                      {title}
+                      {editId == id}
+                    </CardTitle>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      onPress={() => removeTitleList(id)}
+                      className='bg-red-300'
+                    >
+                      <Trash2Icon size={16} className='text-foreground' />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {items.length > 0 &&
+                    items.map(({ id: itemId, value, checked }) => (
+                      <div id={itemId} className='gap-8 flex items-center text-foreground'>
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(checked: boolean) =>
+                            handleCheckTitleListItem(checked, id, itemId)
+                          }
+                        />
+                        {value}
+                      </div>
+                    ))}
+                </CardContent>
+              </Card>
+            </div>
+          );
+        }}
+        ListFooterComponent={<View className='py-4' />}
+      />
     </View>
-  );
-}
-
-const contentInsets = {
-  left: 12,
-  right: 12,
-};
-
-function RoleDropdownSelect({ defaultValue }: { defaultValue: string }) {
-  const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState(defaultValue);
-  return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant='outline'
-          size={Platform.OS === 'web' ? 'sm' : 'default'}
-          className='flex-row gap-2 native:pr-3'
-        >
-          <Text>{value}</Text>
-          <ChevronDown size={18} className='text-foreground' />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align='end' insets={contentInsets} className='w-64 native:w-72'>
-        <DropdownMenuLabel>Select new role</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup className='gap-1'>
-          <DropdownMenuItem
-            onPress={() => {
-              setValue('Viewer');
-            }}
-            className={cn(
-              'flex-col items-start gap-1',
-              value === 'Viewer' ? 'bg-secondary/70' : ''
-            )}
-          >
-            <Text>Viewer</Text>
-            <Muted>Can view and comment.</Muted>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onPress={() => {
-              setValue('Billing');
-            }}
-            className={cn(
-              'flex-col items-start gap-1',
-              value === 'Billing' ? 'bg-secondary/70' : ''
-            )}
-          >
-            <Text>Billing</Text>
-            <Muted>Can view, comment, and manage billing.</Muted>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onPress={() => {
-              setValue('Owner');
-            }}
-            className={cn('flex-col items-start gap-1', value === 'Owner' ? 'bg-secondary/70' : '')}
-          >
-            <Text>Owner</Text>
-            <Muted>Admin-level access to all resources</Muted>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function TeamMemberHoverCard({ name }: { name: string }) {
-  const [open, setOpen] = React.useState(false);
-
-  return (
-    <HoverCard openDelay={0} closeDelay={0} open={open} onOpenChange={setOpen}>
-      <HoverCardTrigger className='group web:focus:outline-none'>
-        <Text numberOfLines={1} className='group-active:underline web:group-hover:underline'>
-          {name}
-        </Text>
-      </HoverCardTrigger>
-      <HoverCardContent insets={contentInsets} className='w-80 native:w-96'>
-        <View className='flex flex-row justify-between gap-4'>
-          <Avatar alt='Vercel avatar'>
-            <AvatarImage source={{ uri: 'https://github.com/vercel.png' }} />
-            <AvatarFallback>VC</AvatarFallback>
-          </Avatar>
-          <View className='gap-1 flex-1'>
-            <Text className='text-sm native:text-base font-semibold'>{name}</Text>
-            <Text className='text-sm native:text-base'>
-              Wishes they were part of the triangle company.
-            </Text>
-            <View className='flex flex-row items-center pt-2 gap-2'>
-              <CalendarDays size={14} className='text-foreground opacity-70' />
-              <Text className='text-xs native:text-sm text-muted-foreground'>
-                Fingers crossed since December 2021
-              </Text>
-            </View>
-          </View>
-        </View>
-      </HoverCardContent>
-    </HoverCard>
-  );
-}
-
-function TeamMemberAvatar({
-  name,
-  initials,
-  uri,
-}: {
-  name: string;
-  initials: string;
-  uri: string;
-}) {
-  const [open, setOpen] = React.useState(false);
-  const [isDialogOpen, setDialogOpen] = React.useState(false);
-  const [isAlertDialogOpen, setAlertDialogOpen] = React.useState(false);
-  return (
-    <ContextMenu
-      open={open}
-      onOpenChange={(newVal) => {
-        setOpen(newVal);
-      }}
-      relativeTo='trigger'
-    >
-      {/* @ts-expect-error tabIndex is only available on the web */}
-      <ContextMenuTrigger tabIndex={-1} className='web:cursor-default web:focus:outline-none'>
-        <Avatar alt={`${name}'s avatar`}>
-          <AvatarImage source={{ uri }} />
-          <AvatarFallback>
-            <Text className='web:select-none'>{initials}</Text>
-          </AvatarFallback>
-        </Avatar>
-      </ContextMenuTrigger>
-
-      <ContextMenuContent align='start' insets={contentInsets} className='w-64 native:w-72'>
-        <ContextMenuItem>
-          <Text>View</Text>
-        </ContextMenuItem>
-
-        <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <ContextMenuItem closeOnPress={false}>
-              <Text className='font-semibold'>Edit</Text>
-            </ContextMenuItem>
-          </DialogTrigger>
-          <DialogContent className='sm:max-w-[425px] native:w-[385px]'>
-            <DialogHeader>
-              <DialogTitle>Edit profile</DialogTitle>
-              <DialogDescription>
-                Make changes to the profile here. Click save when you're done.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button>
-                  <Text>OK</Text>
-                </Button>
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <AlertDialog open={isAlertDialogOpen} onOpenChange={setAlertDialogOpen}>
-          <AlertDialogTrigger asChild>
-            <ContextMenuItem closeOnPress={false}>
-              <Text className='text-destructive font-semibold'>Delete</Text>
-            </ContextMenuItem>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete your account and remove
-                your data from our servers.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>
-                <Text>Cancel</Text>
-              </AlertDialogCancel>
-              <AlertDialogAction>
-                <Text>Continue</Text>
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </ContextMenuContent>
-    </ContextMenu>
   );
 }

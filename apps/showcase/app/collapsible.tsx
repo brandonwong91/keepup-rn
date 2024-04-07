@@ -41,7 +41,7 @@ export default function CollapsibleScreen() {
   );
 }
 
-function CollapsibleItem({ children, delay }: { children: string; delay: number }) {
+export function CollapsibleItem({ children, delay }: { children: string; delay: number }) {
   if (Platform.OS === 'web') {
     return (
       <View className='rounded-md border border-border px-4 py-3'>
@@ -59,3 +59,4 @@ function CollapsibleItem({ children, delay }: { children: string; delay: number 
     </Animated.View>
   );
 }
+ß;
