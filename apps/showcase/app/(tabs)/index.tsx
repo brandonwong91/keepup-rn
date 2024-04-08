@@ -191,13 +191,13 @@ export default function HomeScreen() {
   return (
     <View className='flex-1 p-6 justify-center gap-6 '>
       <Form {...form}>
-        <div className='max-w-lg mx-auto'>
+        <View className='max-w-lg mx-auto'>
           <Card className={cn('p-6', { 'border-0 shadow-none': !open })}>
             <Collapsible asChild open={open} onOpenChange={setOpen}>
               <Animated.View layout={Platform.OS !== 'web' ? LinearTransition : undefined}>
                 <View className='w-full gap-4'>
                   <View className='flex flex-row items-center gap-2 justify-between'>
-                    <div className='w-full'>
+                    <View className='w-full'>
                       <FormField
                         name='title'
                         render={({ field }) => (
@@ -209,7 +209,7 @@ export default function HomeScreen() {
                           />
                         )}
                       />
-                    </div>
+                    </View>
                     <CollapsibleTrigger asChild>
                       <Button variant='ghost' size='icon'>
                         {open ? (
@@ -223,7 +223,7 @@ export default function HomeScreen() {
                   </View>
                   <CollapsibleContent className='gap-3'>
                     {showList && (
-                      <div className='flex gap-3 items-center'>
+                      <View className='flex gap-3 items-center'>
                         {showList && <GripVerticalIcon size={16} className='text-foreground' />}
                         {showList && form.getValues('item') ? (
                           <FormField
@@ -253,13 +253,13 @@ export default function HomeScreen() {
                             <XIcon size={16} className='text-foreground' />
                           </Button>
                         )}
-                      </div>
+                      </View>
                     )}
 
                     {list.length > 0 &&
                       list.map((item) => {
                         return (
-                          <div className='flex gap-3 items-center' key={`${item.id}`}>
+                          <View className='flex gap-3 items-center' key={`${item.id}`}>
                             <GripVerticalIcon size={16} className='text-foreground' />
                             <FormCheckbox
                               className='-ml-2'
@@ -285,11 +285,11 @@ export default function HomeScreen() {
                             <Button variant='ghost' size='icon' onPress={() => removeItem(item.id)}>
                               <Trash2Icon size={16} className='text-foreground' />
                             </Button>
-                          </div>
+                          </View>
                         );
                       })}
                     <Separator className='my-1' />
-                    <div className='flex justify-between'>
+                    <View className='flex justify-between'>
                       <Button variant='ghost' size='icon'>
                         <Toggle
                           aria-label='Toggle italic'
@@ -304,13 +304,13 @@ export default function HomeScreen() {
                       <Button variant='ghost' size='icon' onPress={submitTitleList}>
                         <Check size={16} className='text-foreground' />
                       </Button>
-                    </div>
+                    </View>
                   </CollapsibleContent>
                 </View>
               </Animated.View>
             </Collapsible>
           </Card>
-        </div>
+        </View>
       </Form>
 
       <FlashList
@@ -322,10 +322,10 @@ export default function HomeScreen() {
         renderItem={({ item }) => {
           const { id, items, title } = item;
           return (
-            <div key={id} className='py-2'>
+            <View key={id} className='py-2'>
               <Card>
                 <CardHeader>
-                  <div className='flex justify-between'>
+                  <View className='flex justify-between'>
                     <CardTitle className='pt-1' onPress={() => setEditTitleList(item)}>
                       {title}
                       {editId == id}
@@ -338,12 +338,12 @@ export default function HomeScreen() {
                     >
                       <Trash2Icon size={16} className='text-foreground' />
                     </Button>
-                  </div>
+                  </View>
                 </CardHeader>
                 <CardContent>
                   {items.length > 0 &&
                     items.map(({ id: itemId, value, checked }) => (
-                      <div id={itemId} className='gap-8 flex items-center text-foreground'>
+                      <View id={itemId} className='gap-8 flex items-center text-foreground'>
                         <Checkbox
                           checked={checked}
                           onCheckedChange={(checked: boolean) =>
@@ -351,11 +351,11 @@ export default function HomeScreen() {
                           }
                         />
                         {value}
-                      </div>
+                      </View>
                     ))}
                 </CardContent>
               </Card>
-            </div>
+            </View>
           );
         }}
         ListFooterComponent={<View className='py-4' />}
