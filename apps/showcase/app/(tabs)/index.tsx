@@ -196,8 +196,8 @@ export default function HomeScreen() {
             <Collapsible asChild open={open} onOpenChange={setOpen}>
               <Animated.View layout={Platform.OS !== 'web' ? LinearTransition : undefined}>
                 <View className='w-full gap-4'>
-                  <View className='flex flex-row items-center gap-2 justify-between'>
-                    <View className='w-full'>
+                  <View className={cn('flex flex-row gap-3', { 'justify-end': showList })}>
+                    <View>
                       <FormField
                         name='title'
                         render={({ field }) => (
@@ -223,7 +223,7 @@ export default function HomeScreen() {
                   </View>
                   <CollapsibleContent className='gap-3'>
                     {showList && (
-                      <View className='flex gap-3 items-center'>
+                      <View className='flex flex-row gap-3 items-center'>
                         {showList && <GripVerticalIcon size={16} className='text-foreground' />}
                         {showList && form.getValues('item') ? (
                           <FormField
@@ -289,10 +289,10 @@ export default function HomeScreen() {
                         );
                       })}
                     <Separator className='my-1' />
-                    <View className='flex justify-between'>
+                    <View className='flex flex-row justify-between'>
                       <Button variant='ghost' size='icon'>
                         <Toggle
-                          aria-label='Toggle italic'
+                          aria-label='Toggle showList'
                           pressed={showList}
                           onPressedChange={() => {
                             setShowList((prev) => !prev);
@@ -325,7 +325,7 @@ export default function HomeScreen() {
             <View key={id} className='py-2'>
               <Card>
                 <CardHeader>
-                  <View className='flex justify-between'>
+                  <View className='flex flex-row justify-between'>
                     <CardTitle className='pt-1' onPress={() => setEditTitleList(item)}>
                       {title}
                       {editId == id}
