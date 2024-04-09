@@ -210,6 +210,7 @@ export default function HomeScreen() {
                         )}
                       />
                     </View>
+
                     <CollapsibleTrigger asChild>
                       <Button variant='ghost' size='icon'>
                         {open ? (
@@ -290,17 +291,15 @@ export default function HomeScreen() {
                       })}
                     <Separator className='my-1' />
                     <View className='flex flex-row justify-between'>
-                      <Button variant='ghost' size='icon'>
-                        <Toggle
-                          aria-label='Toggle showList'
-                          pressed={showList}
-                          onPressedChange={() => {
-                            setShowList((prev) => !prev);
-                          }}
-                        >
-                          <ListTodoIcon size={16} className='text-foreground' />
-                        </Toggle>
-                      </Button>
+                      <Toggle
+                        aria-label='Toggle showList'
+                        pressed={showList}
+                        onPressedChange={() => {
+                          setShowList((prev) => !prev);
+                        }}
+                      >
+                        <ListTodoIcon size={16} className='text-foreground' />
+                      </Toggle>
                       <Button variant='ghost' size='icon' onPress={submitTitleList}>
                         <Check size={16} className='text-foreground' />
                       </Button>
