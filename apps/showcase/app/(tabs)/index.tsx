@@ -189,14 +189,18 @@ export default function HomeScreen() {
   };
 
   return (
-    <View className='flex-1 p-6 justify-center gap-6 '>
+    <View className='flex-1 p-6 justify-center gap-6'>
       <Form {...form}>
         <View className='max-w-lg mx-auto'>
           <Card className={cn('p-6', { 'border-0 shadow-none': !open })}>
             <Collapsible asChild open={open} onOpenChange={setOpen}>
               <Animated.View layout={Platform.OS !== 'web' ? LinearTransition : undefined}>
                 <View className='w-full gap-4'>
-                  <View className={cn('flex flex-row gap-3', { 'justify-end': showList })}>
+                  <View
+                    className={cn('flex flex-row gap-3', {
+                      'justify-end': showList || list.length > 0,
+                    })}
+                  >
                     <View>
                       <FormField
                         name='title'
@@ -230,9 +234,7 @@ export default function HomeScreen() {
                           <FormField
                             control={form.control}
                             name='checked'
-                            render={({ field }) => (
-                              <FormCheckbox {...field} className='-ml-2'></FormCheckbox>
-                            )}
+                            render={({ field }) => <FormCheckbox {...field}></FormCheckbox>}
                           />
                         ) : (
                           <PlusIcon size={24} className='text-foreground' />
@@ -250,7 +252,12 @@ export default function HomeScreen() {
                           )}
                         />
                         {showList && (
-                          <Button variant='ghost' size='icon' onPress={handleClearItem}>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            onPress={handleClearItem}
+                            className='bg-red-300 dark:bg-red-700'
+                          >
                             <XIcon size={16} className='text-foreground' />
                           </Button>
                         )}
@@ -260,10 +267,9 @@ export default function HomeScreen() {
                     {list.length > 0 &&
                       list.map((item) => {
                         return (
-                          <View className='flex gap-3 items-center' key={`${item.id}`}>
+                          <View className='flex flex-row gap-3 items-center' key={`${item.id}`}>
                             <GripVerticalIcon size={16} className='text-foreground' />
                             <FormCheckbox
-                              className='-ml-2'
                               value={item.checked}
                               onBlur={function (): void {
                                 throw new Error('Function not implemented.');
@@ -278,12 +284,15 @@ export default function HomeScreen() {
                               className='w-full'
                               value={item.value}
                               name={''}
-                              onBlur={function (): void {
-                                throw new Error('Function not implemented.');
-                              }}
+                              onBlur={() => {}}
                               onChange={(val) => handleOnChange(item.id, val)}
                             />
-                            <Button variant='ghost' size='icon' onPress={() => removeItem(item.id)}>
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              onPress={() => removeItem(item.id)}
+                              className='bg-red-300 dark:bg-red-700'
+                            >
                               <Trash2Icon size={16} className='text-foreground' />
                             </Button>
                           </View>
@@ -315,25 +324,24 @@ export default function HomeScreen() {
       <FlashList
         ref={ref}
         data={titleList}
-        className='native:overflow-hidden gap-y-2 '
+        className='native:overflow-hidden gap-y-2'
         estimatedItemSize={20}
         showsVerticalScrollIndicator={true}
         renderItem={({ item }) => {
-          const { id, items, title } = item;
+          const { id: titleListId, items, title } = item;
           return (
-            <View key={id} className='py-2'>
+            <View key={titleListId} className='py-2'>
               <Card>
                 <CardHeader>
                   <View className='flex flex-row justify-between'>
                     <CardTitle className='pt-1' onPress={() => setEditTitleList(item)}>
-                      {title}
-                      {editId == id}
+                      {title || <p className='italic'>Untitled note</p>}
                     </CardTitle>
                     <Button
                       variant='ghost'
                       size='icon'
-                      onPress={() => removeTitleList(id)}
-                      className='bg-red-300'
+                      onPress={() => removeTitleList(titleListId)}
+                      className='bg-red-300 dark:bg-red-700'
                     >
                       <Trash2Icon size={16} className='text-foreground' />
                     </Button>
@@ -342,14 +350,17 @@ export default function HomeScreen() {
                 <CardContent>
                   {items.length > 0 &&
                     items.map(({ id: itemId, value, checked }) => (
-                      <View id={itemId} className='gap-8 flex items-center text-foreground'>
+                      <View
+                        key={itemId}
+                        className='gap-8 flex flex-row items-center text-foreground'
+                      >
                         <Checkbox
                           checked={checked}
                           onCheckedChange={(checked: boolean) =>
-                            handleCheckTitleListItem(checked, id, itemId)
+                            handleCheckTitleListItem(checked, titleListId, itemId)
                           }
                         />
-                        {value}
+                        <p>{value}</p>
                       </View>
                     ))}
                 </CardContent>
