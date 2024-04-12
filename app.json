@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "6f2346aa-1e76-460d-a685-bf015c25fa3c"
+      }
+    },
+    "owner": "brandonwong91",
+    "slug": "keepup-rn",
+    "android": {
+      "package": "com.brandonwong91.keepuprn"
+    }
+  }
+}
