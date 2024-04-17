@@ -14,9 +14,11 @@ import Animated, { LinearTransition } from 'react-native-reanimated';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
 import {
   Check,
+  Grid2X2Icon,
   GripVerticalIcon,
   ListTodoIcon,
   PlusIcon,
+  SeparatorHorizontal,
   Trash2Icon,
   XIcon,
 } from 'lucide-react-native';
@@ -29,12 +31,14 @@ import { useScrollToTop } from '@react-navigation/native';
 const formSchema = z.object({
   title: z.string(),
   item: z.string(),
+  subItem: z.string(),
   checked: z.boolean(),
 });
 
 interface Item {
   id: string;
   value: string;
+  subValue: string;
   checked: boolean;
 }
 
@@ -50,6 +54,7 @@ export default function HomeScreen() {
     defaultValues: {
       title: '',
       item: '',
+      subItem: '',
     },
   });
   const [open, setOpen] = React.useState(false);
@@ -57,27 +62,32 @@ export default function HomeScreen() {
   const [list, setList] = React.useState<Item[]>([]);
   const [titleList, setTitleList] = React.useState<TitleList[]>([]);
   const [editId, setEditId] = React.useState('');
+  const [showTable, setShowTable] = React.useState(false);
 
   const handleEnterKeydown = (e: any) => {
     if (e.key === 'Enter') {
       const newItem: Item = {
         id: Date.now().toString(),
         value: form.getValues('item'),
+        subValue: form.getValues('subItem'),
         checked: form.getValues('checked'),
       };
       setList([...list, newItem]);
       form.resetField('item');
+      form.resetField('subItem');
     }
   };
   const handleOnBlurItem = () => {
-    if (form.getValues('item')) {
+    if (form.getValues('item') && form.getValues('subItem')) {
       const newItem: Item = {
         id: Date.now().toString(),
         value: form.getValues('item'),
+        subValue: form.getValues('subItem'),
         checked: form.getValues('checked'),
       };
       setList([...list, newItem]);
       form.resetField('item');
+      form.resetField('subItem');
     }
   };
 
@@ -85,6 +95,15 @@ export default function HomeScreen() {
     const updatedList = list.map((item) => {
       if (item.id === id) {
         return { ...item, value: val };
+      }
+      return item;
+    });
+    setList(updatedList);
+  };
+  const handleOnChangeSubItem = (id: string, val: string) => {
+    const updatedList = list.map((item) => {
+      if (item.id === id) {
+        return { ...item, subValue: val };
       }
       return item;
     });
@@ -103,6 +122,7 @@ export default function HomeScreen() {
 
   const handleClearItem = () => {
     form.setValue('item', '');
+    form.setValue('subItem', '');
   };
 
   const removeItem = (id: string) => {
@@ -191,40 +211,40 @@ export default function HomeScreen() {
   return (
     <View className='flex-1 p-6 justify-center gap-6'>
       <Form {...form}>
-        <View className='max-w-lg mx-auto'>
+        <View className='mx-auto'>
           <Card className={cn('p-6', { 'border-0 shadow-none': !open })}>
             <Collapsible asChild open={open} onOpenChange={setOpen}>
               <Animated.View layout={Platform.OS !== 'web' ? LinearTransition : undefined}>
-                <View className='w-full gap-4'>
+                <View className='gap-4'>
                   <View
                     className={cn('flex flex-row gap-3', {
                       'justify-end': showList || list.length > 0,
                     })}
                   >
-                    <View>
+                    <View className='w-full'>
                       <FormField
                         name='title'
                         render={({ field }) => (
                           <FormInput
-                            placeholder='Add note...'
+                            placeholder={showList ? 'Add title...' : 'Add note...'}
                             autoCapitalize='none'
                             {...field}
+                            className='w-full'
                             onKeyPress={handleQuickEnterKeyDown}
                           />
                         )}
                       />
                     </View>
 
-                    <CollapsibleTrigger asChild>
-                      <Button variant='ghost' size='icon'>
-                        {open ? (
-                          <ChevronsDownUp size={16} className='text-foreground' />
-                        ) : (
-                          <ChevronsUpDown size={16} className='text-foreground' />
-                        )}
-                        <Text className='sr-only'>Toggle</Text>
-                      </Button>
-                    </CollapsibleTrigger>
+                    {!open && (
+                      <CollapsibleTrigger asChild>
+                        <Button variant='ghost' size='icon'>
+                          {<ChevronsUpDown size={16} className='text-foreground' />}
+
+                          <Text className='sr-only'>Toggle</Text>
+                        </Button>
+                      </CollapsibleTrigger>
+                    )}
                   </View>
                   <CollapsibleContent className='gap-3'>
                     {showList && (
@@ -239,18 +259,36 @@ export default function HomeScreen() {
                         ) : (
                           <PlusIcon size={24} className='text-foreground' />
                         )}
-                        <FormField
-                          name='item'
-                          render={({ field }) => (
-                            <FormInput
-                              placeholder='Add item...'
-                              autoCapitalize='none'
-                              {...field}
-                              onKeyPress={handleEnterKeydown}
-                              onBlur={handleOnBlurItem}
-                            />
+                        <View className='flex flex-row gap-3'>
+                          <FormField
+                            name='item'
+                            render={({ field }) => (
+                              <FormInput
+                                placeholder='Add item...'
+                                autoCapitalize='none'
+                                {...field}
+                                onKeyPress={handleEnterKeydown}
+                                onBlur={handleOnBlurItem}
+                              />
+                            )}
+                          />
+                          {showTable && (
+                            <View className='flex flex-row items-center'>
+                              <FormField
+                                name='subItem'
+                                render={({ field }) => (
+                                  <FormInput
+                                    placeholder='Add field...'
+                                    autoCapitalize='none'
+                                    {...field}
+                                    onKeyPress={handleEnterKeydown}
+                                    onBlur={handleOnBlurItem}
+                                  />
+                                )}
+                              />
+                            </View>
                           )}
-                        />
+                        </View>
                         {showList && (
                           <Button
                             variant='ghost'
@@ -263,7 +301,7 @@ export default function HomeScreen() {
                         )}
                       </View>
                     )}
-
+                    {showTable && list.length > 0 && <Separator className='my-1' />}
                     {list.length > 0 &&
                       list.map((item) => {
                         return (
@@ -279,13 +317,22 @@ export default function HomeScreen() {
                             />
 
                             <FormInput
-                              placeholder='Add description...'
+                              placeholder='Add item...'
                               autoCapitalize='none'
-                              className='w-full'
+                              className={cn('w-full', { 'border-0': showTable })}
                               value={item.value}
                               name={''}
                               onBlur={() => {}}
                               onChange={(val) => handleOnChange(item.id, val)}
+                            />
+                            <FormInput
+                              placeholder='Add subItem...'
+                              autoCapitalize='none'
+                              className={cn('w-full', { 'border-0': showTable })}
+                              value={item.subValue}
+                              name={''}
+                              onBlur={() => {}}
+                              onChange={(val) => handleOnChangeSubItem(item.id, val)}
                             />
                             <Button
                               variant='ghost'
@@ -300,18 +347,37 @@ export default function HomeScreen() {
                       })}
                     <Separator className='my-1' />
                     <View className='flex flex-row justify-between'>
-                      <Toggle
-                        aria-label='Toggle showList'
-                        pressed={showList}
-                        onPressedChange={() => {
-                          setShowList((prev) => !prev);
-                        }}
-                      >
-                        <ListTodoIcon size={16} className='text-foreground' />
-                      </Toggle>
-                      <Button variant='ghost' size='icon' onPress={submitTitleList}>
-                        <Check size={16} className='text-foreground' />
-                      </Button>
+                      <View className='flex flex-row gap-2'>
+                        <Toggle
+                          aria-label='Toggle showList'
+                          pressed={showList}
+                          onPressedChange={() => {
+                            setShowList((prev) => !prev);
+                          }}
+                        >
+                          <ListTodoIcon size={16} className='text-foreground' />
+                        </Toggle>
+                        <Toggle
+                          aria-label='Toggle repeat'
+                          pressed={showTable}
+                          onPressedChange={() => {
+                            setShowTable((prev) => !prev);
+                          }}
+                        >
+                          <Grid2X2Icon size={16} className='text-foreground' />
+                        </Toggle>
+                      </View>
+                      <View className='flex flex-row gap-3'>
+                        <CollapsibleTrigger asChild>
+                          <Button variant='ghost' size='icon'>
+                            {open && <ChevronsDownUp size={16} className='text-foreground' />}
+                            <Text className='sr-only'>Toggle</Text>
+                          </Button>
+                        </CollapsibleTrigger>
+                        <Button variant='ghost' size='icon' onPress={submitTitleList}>
+                          <Check size={16} className='text-foreground' />
+                        </Button>
+                      </View>
                     </View>
                   </CollapsibleContent>
                 </View>
@@ -349,7 +415,7 @@ export default function HomeScreen() {
                 </CardHeader>
                 <CardContent>
                   {items.length > 0 &&
-                    items.map(({ id: itemId, value, checked }) => (
+                    items.map(({ id: itemId, value, subValue, checked }) => (
                       <View
                         key={itemId}
                         className='gap-8 flex flex-row items-center text-foreground'
@@ -361,6 +427,7 @@ export default function HomeScreen() {
                           }
                         />
                         <p>{value}</p>
+                        <p>{subValue}</p>
                       </View>
                     ))}
                 </CardContent>
